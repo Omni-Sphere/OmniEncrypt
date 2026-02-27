@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Secure Encryption Utility</title>
+    <link rel="stylesheet" href="assets/tailwind.min.css" />
+    <link rel="stylesheet" href="assets/fonts/public-sans.css" />
+    <link rel="stylesheet" href="assets/fonts/material-symbols.css" />
+
+    <style>
+        body {
+            font-family: 'Public Sans', sans-serif;
+        }
+
+        /* Garantizar padding en los inputs de una linea sin depender del compilador */
+        #input-string,
+        #output-string {
+            padding-left: 1.5rem !important;
+            /* px-6 equivalent */
+            padding-right: 1.5rem !important;
+        }
+    </style>
+</head>
+
+<body class="bg-background-light dark:bg-background-dark min-h-screen">
+    <div class="w-full">
+        <div
+            class="bg-white dark:bg-slate-900 shadow-xl rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800">
+            <div class="p-4 border-b border-slate-100 dark:border-slate-800">
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="bg-primary/10 p-2 rounded-lg">
+                        <span class="material-symbols-outlined text-primary text-3xl">lock</span>
+                    </div>
+                    <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Encryption Utility
+                    </h1>
+                </div>
+            </div>
+            <div class="p-4 space-y-8">
+                <div class="flex flex-col gap-2">
+                    <div class="flex items-center justify-between">
+                        <label class="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-sm">edit_note</span>
+                            Input String
+                        </label>
+                    </div>
+                    <input type="text"
+                        class="w-full h-14 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder:text-slate-400"
+                        id="input-string" />
+                </div>
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <button
+                        class="flex-1 h-14 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-colors shadow-lg shadow-primary/20"
+                        id="encrypt-btn">
+                        <span class="material-symbols-outlined">enhanced_encryption</span>
+                        Encrypt
+                    </button>
+                    <button
+                        class="flex-1 h-14 bg-white dark:bg-slate-800 border-2 border-primary text-primary hover:bg-primary/5 font-bold rounded-xl flex items-center justify-center gap-2 transition-colors"
+                        id="decrypt-btn">
+                        <span class="material-symbols-outlined">no_encryption</span>
+                        Decrypt
+                    </button>
+                </div>
+                <div class="relative flex items-center py-2">
+                    <div class="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
+                    <span class="flex-shrink mx-4 text-slate-400">
+                        <span class="material-symbols-outlined text-base">arrow_downward</span>
+                    </span>
+                    <div class="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
+                </div>
+                <div class="flex flex-col gap-2">
+                    <div class="flex items-center justify-between">
+                        <label class="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-sm">output</span>
+                            Output String (Result)
+                        </label>
+                    </div>
+                    <input type="text"
+                        class="w-full h-14 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100/50 dark:bg-slate-950/50 text-slate-900 dark:text-slate-100 focus:outline-none placeholder:text-slate-400 font-mono text-sm"
+                        id="output-string" placeholder="Processed result will appear here..." readonly />
+                </div>
+            </div>
+        </div>
+
+        <!-- Custom Context Menu for Inputs -->
+        <div id="custom-context-menu"
+            class="absolute z-50 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl rounded-xl p-2 min-w-[160px]"
+            style="display: none;">
+            <button id="menu-cut"
+                class="cursor-default w-full text-left px-3 py-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/50 flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300 transition-colors">
+                <span class="material-symbols-outlined text-sm">content_cut</span> Cut
+            </button>
+            <button id="menu-copy"
+                class="cursor-default w-full text-left px-3 py-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/50 flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300 transition-colors">
+                <span class="material-symbols-outlined text-sm">content_copy</span> Copy
+            </button>
+            <button id="menu-paste"
+                class="cursor-default w-full text-left px-3 py-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/50 flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300 transition-colors">
+                <span class="material-symbols-outlined text-sm">content_paste</span> Paste
+            </button>
+        </div>
+
+        <script>
+            const inputEl = document.getElementById('input-string');
+            const outputEl = document.getElementById('output-string');
+
+            document.getElementById('encrypt-btn').addEventListener('click', async () => {
+                const val = inputEl.value.trim();
+                if (!val) {
+                    outputEl.value = 'Error: Cadena vacía';
+                    outputEl.classList.add('text-red-500', 'dark:text-red-400');
+                    return;
+                }
+                outputEl.classList.remove('text-red-500', 'dark:text-red-400');
+                try {
+                    outputEl.value = await window.omni_encrypt(val);
+                    showFeedback('Encrypted successfully!');
+                } catch (e) {
+                    console.error(e);
+                }
+            });
+
+            document.getElementById('decrypt-btn').addEventListener('click', async () => {
+                const val = inputEl.value.trim();
+                if (!val) {
+                    outputEl.value = 'Error: Cadena mal formada o vacía';
+                    outputEl.classList.add('text-red-500', 'dark:text-red-400');
+                    return;
+                }
+                outputEl.classList.remove('text-red-500', 'dark:text-red-400');
+                try {
+                    const dec = await window.omni_decrypt(val);
+                    if (!dec || dec.startsWith("Error:") || dec.trim() === "") {
+                        outputEl.value = 'Error: Cadena mal formada o vacía';
+                        outputEl.classList.add('text-red-500', 'dark:text-red-400');
+                        return;
+                    }
+                    outputEl.value = dec;
+                    showFeedback('Decrypted successfully!');
+                } catch (e) {
+                    outputEl.value = 'Error: Cadena mal formada o vacía';
+                    outputEl.classList.add('text-red-500', 'dark:text-red-400');
+                    console.error(e);
+                }
+            });
+
+            function showFeedback(msg) {
+                console.log(msg);
+                // Visual feedback on the output field
+                outputEl.classList.add('ring-2', 'ring-primary/50');
+                setTimeout(() => outputEl.classList.remove('ring-2', 'ring-primary/50'), 500);
+            }
+
+            // Custom Context Menu Logic
+            const contextMenu = document.getElementById('custom-context-menu');
+            let activeInput = null;
+
+            // Attach context menu listener globally and on inputs specifically for maximum aggression against WebKit
+            window.oncontextmenu = function (e) {
+                console.log('oncontextmenu fired!', e.target.tagName);
+                e.preventDefault();
+
+                if (e.target.tagName === 'INPUT') {
+                    activeInput = e.target;
+
+                    const hasText = activeInput.value.length > 0;
+
+                    ['menu-cut', 'menu-copy', 'menu-paste'].forEach(id => {
+                        const el = document.getElementById(id);
+                        el.classList.remove('opacity-50', 'pointer-events-none');
+                        el.style.display = ''; // Reset to default flex display
+                    });
+
+                    if (activeInput.readOnly) {
+                        // For output (readonly), ONLY show the Copy option
+                        document.getElementById('menu-cut').style.display = 'none';
+                        document.getElementById('menu-paste').style.display = 'none';
+                    } else {
+                        // For input, show all, but disable if empty
+                        if (!hasText) {
+                            document.getElementById('menu-cut').classList.add('opacity-50', 'pointer-events-none');
+                            document.getElementById('menu-copy').classList.add('opacity-50', 'pointer-events-none');
+                        }
+                    }
+
+                    contextMenu.style.display = 'block';
+                    let x = e.pageX;
+                    let y = e.pageY;
+
+                    if (x + contextMenu.offsetWidth > window.innerWidth) x -= contextMenu.offsetWidth;
+                    if (y + contextMenu.offsetHeight > window.innerHeight) y -= contextMenu.offsetHeight;
+
+                    contextMenu.style.left = `${x}px`;
+                    contextMenu.style.top = `${y}px`;
+                } else {
+                    contextMenu.style.display = 'none';
+                }
+
+                return false;
+            };
+
+            inputEl.oncontextmenu = window.oncontextmenu;
+            outputEl.oncontextmenu = window.oncontextmenu;
+
+            // Prevent mousedown inside the menu from stealing focus from the input
+            contextMenu.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+            });
+
+            // Hide context menu when interacting outside
+            const hideMenuIfOutside = (e) => {
+                if (e.button === 2) return; // ignore right clicks
+                if (contextMenu.style.display === 'block' && !contextMenu.contains(e.target)) {
+                    contextMenu.style.display = 'none';
+                }
+            };
+
+            document.addEventListener('mousedown', hideMenuIfOutside);
+            document.addEventListener('touchstart', hideMenuIfOutside);
+
+            // Action listeners on click
+            document.getElementById('menu-cut').addEventListener('click', (e) => {
+                if (activeInput && !activeInput.readOnly) {
+                    try { document.execCommand('cut'); } catch (err) { console.error(err); }
+                }
+            });
+
+            document.getElementById('menu-copy').addEventListener('click', (e) => {
+                if (activeInput) {
+                    try {
+                        // If nothing is selected, select all text to copy its entirety
+                        if (activeInput.selectionStart === activeInput.selectionEnd) {
+                            activeInput.select();
+                        }
+                        document.execCommand('copy');
+
+                        // Show visual feedback that it was copied
+                        if (activeInput.readOnly && activeInput.value) {
+                            showFeedback('Copiado al portapapeles!');
+                        }
+                    } catch (err) { console.error(err); }
+                }
+            });
+
+            document.getElementById('menu-paste').addEventListener('click', async (e) => {
+                if (activeInput && !activeInput.readOnly) {
+                    try {
+                        if (navigator.clipboard && navigator.clipboard.readText) {
+                            const text = await navigator.clipboard.readText();
+                            document.execCommand('insertText', false, text);
+                        } else {
+                            document.execCommand('paste');
+                        }
+                    } catch (err) {
+                        try { document.execCommand('paste'); } catch (fallbackErr) { console.error(fallbackErr); }
+                    }
+                }
+            });
+
+            // Close menu on ANY left click inside the menu
+            contextMenu.addEventListener('click', (e) => {
+                contextMenu.style.display = 'none';
+            });
+
+            // Global Keyboard Shortcuts (since raw webviews lack default OS menus/responder chains on macOS)
+            document.addEventListener('keydown', (e) => {
+                const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+                const activeMod = isMac ? e.metaKey : e.ctrlKey;
+
+                // Copy (Cmd+C / Ctrl+C)
+                if (activeMod && e.key.toLowerCase() === 'c') {
+                    if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
+                        // If nothing is selected and we are in output, select all automatically like the menu button
+                        if (document.activeElement.id === 'output-string' && document.activeElement.selectionStart === document.activeElement.selectionEnd) {
+                            document.activeElement.select();
+                        }
+                    }
+                    try { document.execCommand('copy'); } catch (err) { }
+                }
+                // Cut (Cmd+X / Ctrl+X)
+                else if (activeMod && e.key.toLowerCase() === 'x') {
+                    if (document.activeElement && !document.activeElement.readOnly &&
+                        (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
+                        try { document.execCommand('cut'); } catch (err) { }
+                    }
+                }
+                // Paste (Cmd+V / Ctrl+V) - using the modern approach first, then fallback
+                else if (activeMod && e.key.toLowerCase() === 'v') {
+                    if (document.activeElement && !document.activeElement.readOnly &&
+                        (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
+
+                        const pasteLogic = async () => {
+                            try {
+                                if (navigator.clipboard && navigator.clipboard.readText) {
+                                    const text = await navigator.clipboard.readText();
+                                    document.execCommand('insertText', false, text);
+                                } else {
+                                    document.execCommand('paste');
+                                }
+                            } catch (err) {
+                                try { document.execCommand('paste'); } catch (fallback) { }
+                            }
+                        };
+                        pasteLogic();
+                    }
+                }
+                // Select All (Cmd+A / Ctrl+A)
+                else if (activeMod && e.key.toLowerCase() === 'a') {
+                    if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
+                        document.activeElement.select();
+                        e.preventDefault();
+                    }
+                }
+                // Close App (Cmd+Q, Cmd+W, Ctrl+Q, Ctrl+W, Alt+F4)
+                else if ((activeMod && (e.key.toLowerCase() === 'q' || e.key.toLowerCase() === 'w')) ||
+                    (e.altKey && e.key === 'F4')) {
+                    e.preventDefault();
+                    if (window.omni_quit) {
+                        window.omni_quit('');
+                    } else {
+                        window.close();
+                    }
+                }
+            });
+        </script>
+</body>
+
+</html>
