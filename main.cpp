@@ -5,6 +5,10 @@
 #include <boost/json.hpp>
 #include <string>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 // Helpers
 
 std::string extract_input(const std::string &raw_req) {
@@ -27,7 +31,12 @@ std::string to_json_result(const std::string &s) {
   return boost::json::serialize(boost::json::string(s));
 }
 
+#ifdef _WIN32
+int WINAPI WinMain(HINSTANCE hInt, HINSTANCE hPrevInst, LPSTR lpCmdLine,
+                   int nCmdShow) {
+#else
 int main() {
+#endif
   omnisphere::utils::Base64::SetSecret(".:d0mn15ph3r3b:.");
   webview::webview w(false, nullptr);
   w.set_title("OmniEncrypt");

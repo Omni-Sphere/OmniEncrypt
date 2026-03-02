@@ -11,34 +11,136 @@
     <link rel="stylesheet" href="assets/fonts/material-symbols.css" />
 
     <style>
+        html,
         body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
             font-family: 'Public Sans', sans-serif;
+            display: flex;
+            flex-direction: column;
+        }
+
+        html.light body {
+            background-color: #f8fafc;
+        }
+
+        html.dark body {
+            background-color: #0f172a;
+        }
+
+        /* Layout responsivo: todo flex-column, el panel se estira */
+        #app-wrapper {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        #app-card {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        #app-content {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            justify-content: center;
+            padding: 1rem;
+            gap: 1.5rem;
+        }
+
+        /* Centrar perfecto el botón de tema */
+        #theme-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+        }
+
+        #theme-toggle .material-symbols-outlined {
+            font-size: 20px;
+            line-height: 1;
         }
 
         /* Garantizar padding en los inputs de una linea sin depender del compilador */
         #input-string,
         #output-string {
             padding-left: 1.5rem !important;
-            /* px-6 equivalent */
             padding-right: 1.5rem !important;
+        }
+
+        /* Ajustes de contraste para el tema oscuro de la clase primary nativa */
+        html.dark .bg-primary {
+            background-color: #3b82f6 !important;
+        }
+
+        html.dark .hover\:bg-primary\/90:hover {
+            background-color: #60a5fa !important;
+        }
+
+        html.dark .text-primary {
+            color: #60a5fa !important;
+        }
+
+        html.dark .border-primary {
+            border-color: #60a5fa !important;
+        }
+
+        html.dark .hover\:bg-primary\/5:hover {
+            background-color: rgba(96, 165, 250, 0.1) !important;
+        }
+
+        html.dark .bg-primary\/10 {
+            background-color: rgba(96, 165, 250, 0.1) !important;
+        }
+
+        html.dark .focus\:border-primary:focus {
+            border-color: #60a5fa !important;
+        }
+
+        html.dark .focus\:ring-primary\/20:focus {
+            --tw-ring-color: rgba(96, 165, 250, 0.2) !important;
+            box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), 0 0 0 2px var(--tw-ring-color) !important;
+        }
+
+        html.dark .shadow-primary\/20 {
+            box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.2), 0 4px 6px -4px rgba(59, 130, 246, 0.2) !important;
+        }
+
+        html.dark .ring-primary\/50 {
+            --tw-ring-color: rgba(96, 165, 250, 0.5) !important;
+            box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), 0 0 0 2px var(--tw-ring-color) !important;
         }
     </style>
 </head>
 
-<body class="bg-background-light dark:bg-background-dark min-h-screen">
-    <div class="w-full">
-        <div
-            class="bg-white dark:bg-slate-900 shadow-xl rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800">
-            <div class="p-4 border-b border-slate-100 dark:border-slate-800">
-                <div class="flex items-center gap-3 mb-2">
-                    <div class="bg-primary/10 p-2 rounded-lg">
-                        <span class="material-symbols-outlined text-primary text-3xl">lock</span>
+<body>
+    <div id="app-wrapper">
+        <div id="app-card" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+            <div class="p-4 border-b border-slate-100 dark:border-slate-800" style="flex-shrink:0">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-primary/10 p-2 rounded-lg">
+                            <span class="material-symbols-outlined text-primary text-3xl">lock</span>
+                        </div>
+                        <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Encryption
+                            Utility</h1>
                     </div>
-                    <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Encryption Utility
-                    </h1>
+                    <button id="theme-toggle"
+                        class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                        aria-label="Toggle Theme">
+                        <span class="material-symbols-outlined" id="theme-icon">dark_mode</span>
+                    </button>
                 </div>
             </div>
-            <div class="p-4 space-y-8">
+            <div id="app-content">
                 <div class="flex flex-col gap-2">
                     <div class="flex items-center justify-between">
                         <label class="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
@@ -84,248 +186,251 @@
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Custom Context Menu for Inputs -->
-        <div id="custom-context-menu"
-            class="absolute z-50 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl rounded-xl p-2 min-w-[160px]"
-            style="display: none;">
-            <button id="menu-cut"
-                class="cursor-default w-full text-left px-3 py-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/50 flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300 transition-colors">
-                <span class="material-symbols-outlined text-sm">content_cut</span> Cut
-            </button>
-            <button id="menu-copy"
-                class="cursor-default w-full text-left px-3 py-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/50 flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300 transition-colors">
-                <span class="material-symbols-outlined text-sm">content_copy</span> Copy
-            </button>
-            <button id="menu-paste"
-                class="cursor-default w-full text-left px-3 py-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/50 flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300 transition-colors">
-                <span class="material-symbols-outlined text-sm">content_paste</span> Paste
-            </button>
-        </div>
+    <!-- Custom Context Menu for Inputs -->
+    <div id="custom-context-menu"
+        class="absolute z-50 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl rounded-xl p-2 min-w-[160px]"
+        style="display: none;">
+        <button id="menu-cut"
+            class="cursor-default w-full text-left px-3 py-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/50 flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300 transition-colors">
+            <span class="material-symbols-outlined text-sm">content_cut</span> Cut
+        </button>
+        <button id="menu-copy"
+            class="cursor-default w-full text-left px-3 py-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/50 flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300 transition-colors">
+            <span class="material-symbols-outlined text-sm">content_copy</span> Copy
+        </button>
+        <button id="menu-paste"
+            class="cursor-default w-full text-left px-3 py-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/50 flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300 transition-colors">
+            <span class="material-symbols-outlined text-sm">content_paste</span> Paste
+        </button>
+    </div>
 
-        <script>
-            const inputEl = document.getElementById('input-string');
-            const outputEl = document.getElementById('output-string');
+    <script>
+        const inputEl = document.getElementById('input-string');
+        const outputEl = document.getElementById('output-string');
 
-            document.getElementById('encrypt-btn').addEventListener('click', async () => {
-                const val = inputEl.value.trim();
-                if (!val) {
-                    outputEl.value = 'Error: Cadena vacía';
-                    outputEl.classList.add('text-red-500', 'dark:text-red-400');
-                    return;
-                }
-                outputEl.classList.remove('text-red-500', 'dark:text-red-400');
-                try {
-                    outputEl.value = await window.omni_encrypt(val);
-                    showFeedback('Encrypted successfully!');
-                } catch (e) {
-                    console.error(e);
-                }
-            });
+        document.getElementById('encrypt-btn').addEventListener('click', async () => {
+            const val = inputEl.value.trim();
+            if (!val) {
+                outputEl.value = 'Error: Cadena vacía';
+                outputEl.classList.add('text-red-500', 'dark:text-red-400');
+                return;
+            }
+            outputEl.classList.remove('text-red-500', 'dark:text-red-400');
+            try {
+                outputEl.value = await window.omni_encrypt(val);
+                showFeedback('Encrypted successfully!');
+            } catch (e) {
+                console.error(e);
+            }
+        });
 
-            document.getElementById('decrypt-btn').addEventListener('click', async () => {
-                const val = inputEl.value.trim();
-                if (!val) {
+        document.getElementById('decrypt-btn').addEventListener('click', async () => {
+            const val = inputEl.value.trim();
+            if (!val) {
+                outputEl.value = 'Error: Cadena mal formada o vacía';
+                outputEl.classList.add('text-red-500', 'dark:text-red-400');
+                return;
+            }
+            outputEl.classList.remove('text-red-500', 'dark:text-red-400');
+            try {
+                const dec = await window.omni_decrypt(val);
+                if (!dec || dec.startsWith("Error:") || dec.trim() === "") {
                     outputEl.value = 'Error: Cadena mal formada o vacía';
                     outputEl.classList.add('text-red-500', 'dark:text-red-400');
                     return;
                 }
-                outputEl.classList.remove('text-red-500', 'dark:text-red-400');
-                try {
-                    const dec = await window.omni_decrypt(val);
-                    if (!dec || dec.startsWith("Error:") || dec.trim() === "") {
-                        outputEl.value = 'Error: Cadena mal formada o vacía';
-                        outputEl.classList.add('text-red-500', 'dark:text-red-400');
-                        return;
+                outputEl.value = dec;
+                showFeedback('Decrypted successfully!');
+            } catch (e) {
+                outputEl.value = 'Error: Cadena mal formada o vacía';
+                outputEl.classList.add('text-red-500', 'dark:text-red-400');
+                console.error(e);
+            }
+        });
+
+        function showFeedback(msg) {
+            console.log(msg);
+            outputEl.classList.add('ring-2', 'ring-primary/50');
+            setTimeout(() => outputEl.classList.remove('ring-2', 'ring-primary/50'), 500);
+        }
+
+        // Theme Toggle Logic
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+        const htmlEl = document.documentElement;
+
+        themeToggleBtn.addEventListener('click', () => {
+            if (htmlEl.classList.contains('dark')) {
+                htmlEl.classList.remove('dark');
+                htmlEl.classList.add('light');
+                themeIcon.textContent = 'dark_mode';
+            } else {
+                htmlEl.classList.remove('light');
+                htmlEl.classList.add('dark');
+                themeIcon.textContent = 'light_mode';
+            }
+        });
+
+        // Custom Context Menu Logic
+        const contextMenu = document.getElementById('custom-context-menu');
+        let activeInput = null;
+
+        // Attach context menu listener globally and on inputs specifically for maximum aggression against WebKit
+        window.oncontextmenu = function (e) {
+            console.log('oncontextmenu fired!', e.target.tagName);
+            e.preventDefault();
+
+            if (e.target.tagName === 'INPUT') {
+                activeInput = e.target;
+
+                const hasText = activeInput.value.length > 0;
+
+                ['menu-cut', 'menu-copy', 'menu-paste'].forEach(id => {
+                    const el = document.getElementById(id);
+                    el.classList.remove('opacity-50', 'pointer-events-none');
+                    el.style.display = '';
+                });
+
+                if (activeInput.readOnly) {
+                    document.getElementById('menu-cut').style.display = 'none';
+                    document.getElementById('menu-paste').style.display = 'none';
+                } else {
+                    if (!hasText) {
+                        document.getElementById('menu-cut').classList.add('opacity-50', 'pointer-events-none');
+                        document.getElementById('menu-copy').classList.add('opacity-50', 'pointer-events-none');
                     }
-                    outputEl.value = dec;
-                    showFeedback('Decrypted successfully!');
-                } catch (e) {
-                    outputEl.value = 'Error: Cadena mal formada o vacía';
-                    outputEl.classList.add('text-red-500', 'dark:text-red-400');
-                    console.error(e);
                 }
-            });
 
-            function showFeedback(msg) {
-                console.log(msg);
-                // Visual feedback on the output field
-                outputEl.classList.add('ring-2', 'ring-primary/50');
-                setTimeout(() => outputEl.classList.remove('ring-2', 'ring-primary/50'), 500);
+                contextMenu.style.display = 'block';
+                let x = e.pageX;
+                let y = e.pageY;
+
+                if (x + contextMenu.offsetWidth > window.innerWidth) x -= contextMenu.offsetWidth;
+                if (y + contextMenu.offsetHeight > window.innerHeight) y -= contextMenu.offsetHeight;
+
+                contextMenu.style.left = `${x}px`;
+                contextMenu.style.top = `${y}px`;
+            } else {
+                contextMenu.style.display = 'none';
             }
 
-            // Custom Context Menu Logic
-            const contextMenu = document.getElementById('custom-context-menu');
-            let activeInput = null;
+            return false;
+        };
 
-            // Attach context menu listener globally and on inputs specifically for maximum aggression against WebKit
-            window.oncontextmenu = function (e) {
-                console.log('oncontextmenu fired!', e.target.tagName);
-                e.preventDefault();
+        inputEl.oncontextmenu = window.oncontextmenu;
+        outputEl.oncontextmenu = window.oncontextmenu;
 
-                if (e.target.tagName === 'INPUT') {
-                    activeInput = e.target;
+        contextMenu.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+        });
 
-                    const hasText = activeInput.value.length > 0;
-
-                    ['menu-cut', 'menu-copy', 'menu-paste'].forEach(id => {
-                        const el = document.getElementById(id);
-                        el.classList.remove('opacity-50', 'pointer-events-none');
-                        el.style.display = ''; // Reset to default flex display
-                    });
-
-                    if (activeInput.readOnly) {
-                        // For output (readonly), ONLY show the Copy option
-                        document.getElementById('menu-cut').style.display = 'none';
-                        document.getElementById('menu-paste').style.display = 'none';
-                    } else {
-                        // For input, show all, but disable if empty
-                        if (!hasText) {
-                            document.getElementById('menu-cut').classList.add('opacity-50', 'pointer-events-none');
-                            document.getElementById('menu-copy').classList.add('opacity-50', 'pointer-events-none');
-                        }
-                    }
-
-                    contextMenu.style.display = 'block';
-                    let x = e.pageX;
-                    let y = e.pageY;
-
-                    if (x + contextMenu.offsetWidth > window.innerWidth) x -= contextMenu.offsetWidth;
-                    if (y + contextMenu.offsetHeight > window.innerHeight) y -= contextMenu.offsetHeight;
-
-                    contextMenu.style.left = `${x}px`;
-                    contextMenu.style.top = `${y}px`;
-                } else {
-                    contextMenu.style.display = 'none';
-                }
-
-                return false;
-            };
-
-            inputEl.oncontextmenu = window.oncontextmenu;
-            outputEl.oncontextmenu = window.oncontextmenu;
-
-            // Prevent mousedown inside the menu from stealing focus from the input
-            contextMenu.addEventListener('mousedown', (e) => {
-                e.preventDefault();
-            });
-
-            // Hide context menu when interacting outside
-            const hideMenuIfOutside = (e) => {
-                if (e.button === 2) return; // ignore right clicks
-                if (contextMenu.style.display === 'block' && !contextMenu.contains(e.target)) {
-                    contextMenu.style.display = 'none';
-                }
-            };
-
-            document.addEventListener('mousedown', hideMenuIfOutside);
-            document.addEventListener('touchstart', hideMenuIfOutside);
-
-            // Action listeners on click
-            document.getElementById('menu-cut').addEventListener('click', (e) => {
-                if (activeInput && !activeInput.readOnly) {
-                    try { document.execCommand('cut'); } catch (err) { console.error(err); }
-                }
-            });
-
-            document.getElementById('menu-copy').addEventListener('click', (e) => {
-                if (activeInput) {
-                    try {
-                        // If nothing is selected, select all text to copy its entirety
-                        if (activeInput.selectionStart === activeInput.selectionEnd) {
-                            activeInput.select();
-                        }
-                        document.execCommand('copy');
-
-                        // Show visual feedback that it was copied
-                        if (activeInput.readOnly && activeInput.value) {
-                            showFeedback('Copiado al portapapeles!');
-                        }
-                    } catch (err) { console.error(err); }
-                }
-            });
-
-            document.getElementById('menu-paste').addEventListener('click', async (e) => {
-                if (activeInput && !activeInput.readOnly) {
-                    try {
-                        if (navigator.clipboard && navigator.clipboard.readText) {
-                            const text = await navigator.clipboard.readText();
-                            document.execCommand('insertText', false, text);
-                        } else {
-                            document.execCommand('paste');
-                        }
-                    } catch (err) {
-                        try { document.execCommand('paste'); } catch (fallbackErr) { console.error(fallbackErr); }
-                    }
-                }
-            });
-
-            // Close menu on ANY left click inside the menu
-            contextMenu.addEventListener('click', (e) => {
+        const hideMenuIfOutside = (e) => {
+            if (e.button === 2) return;
+            if (contextMenu.style.display === 'block' && !contextMenu.contains(e.target)) {
                 contextMenu.style.display = 'none';
-            });
+            }
+        };
 
-            // Global Keyboard Shortcuts (since raw webviews lack default OS menus/responder chains on macOS)
-            document.addEventListener('keydown', (e) => {
-                const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-                const activeMod = isMac ? e.metaKey : e.ctrlKey;
+        document.addEventListener('mousedown', hideMenuIfOutside);
+        document.addEventListener('touchstart', hideMenuIfOutside);
 
-                // Copy (Cmd+C / Ctrl+C)
-                if (activeMod && e.key.toLowerCase() === 'c') {
-                    if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
-                        // If nothing is selected and we are in output, select all automatically like the menu button
-                        if (document.activeElement.id === 'output-string' && document.activeElement.selectionStart === document.activeElement.selectionEnd) {
-                            document.activeElement.select();
-                        }
-                    }
-                    try { document.execCommand('copy'); } catch (err) { }
-                }
-                // Cut (Cmd+X / Ctrl+X)
-                else if (activeMod && e.key.toLowerCase() === 'x') {
-                    if (document.activeElement && !document.activeElement.readOnly &&
-                        (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
-                        try { document.execCommand('cut'); } catch (err) { }
-                    }
-                }
-                // Paste (Cmd+V / Ctrl+V) - using the modern approach first, then fallback
-                else if (activeMod && e.key.toLowerCase() === 'v') {
-                    if (document.activeElement && !document.activeElement.readOnly &&
-                        (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
+        document.getElementById('menu-cut').addEventListener('click', (e) => {
+            if (activeInput && !activeInput.readOnly) {
+                try { document.execCommand('cut'); } catch (err) { console.error(err); }
+            }
+        });
 
-                        const pasteLogic = async () => {
-                            try {
-                                if (navigator.clipboard && navigator.clipboard.readText) {
-                                    const text = await navigator.clipboard.readText();
-                                    document.execCommand('insertText', false, text);
-                                } else {
-                                    document.execCommand('paste');
-                                }
-                            } catch (err) {
-                                try { document.execCommand('paste'); } catch (fallback) { }
-                            }
-                        };
-                        pasteLogic();
+        document.getElementById('menu-copy').addEventListener('click', (e) => {
+            if (activeInput) {
+                try {
+                    if (activeInput.selectionStart === activeInput.selectionEnd) {
+                        activeInput.select();
                     }
-                }
-                // Select All (Cmd+A / Ctrl+A)
-                else if (activeMod && e.key.toLowerCase() === 'a') {
-                    if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
-                        document.activeElement.select();
-                        e.preventDefault();
+                    document.execCommand('copy');
+
+                    if (activeInput.readOnly && activeInput.value) {
+                        showFeedback('Copiado al portapapeles!');
                     }
-                }
-                // Close App (Cmd+Q, Cmd+W, Ctrl+Q, Ctrl+W, Alt+F4)
-                else if ((activeMod && (e.key.toLowerCase() === 'q' || e.key.toLowerCase() === 'w')) ||
-                    (e.altKey && e.key === 'F4')) {
-                    e.preventDefault();
-                    if (window.omni_quit) {
-                        window.omni_quit('');
+                } catch (err) { console.error(err); }
+            }
+        });
+
+        document.getElementById('menu-paste').addEventListener('click', async (e) => {
+            if (activeInput && !activeInput.readOnly) {
+                try {
+                    if (navigator.clipboard && navigator.clipboard.readText) {
+                        const text = await navigator.clipboard.readText();
+                        document.execCommand('insertText', false, text);
                     } else {
-                        window.close();
+                        document.execCommand('paste');
+                    }
+                } catch (err) {
+                    try { document.execCommand('paste'); } catch (fallbackErr) { console.error(fallbackErr); }
+                }
+            }
+        });
+
+        contextMenu.addEventListener('click', (e) => {
+            contextMenu.style.display = 'none';
+        });
+
+        // Global Keyboard Shortcuts
+        document.addEventListener('keydown', (e) => {
+            const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+            const activeMod = isMac ? e.metaKey : e.ctrlKey;
+
+            if (activeMod && e.key.toLowerCase() === 'c') {
+                if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
+                    if (document.activeElement.id === 'output-string' && document.activeElement.selectionStart === document.activeElement.selectionEnd) {
+                        document.activeElement.select();
                     }
                 }
-            });
-        </script>
+                try { document.execCommand('copy'); } catch (err) { }
+            }
+            else if (activeMod && e.key.toLowerCase() === 'x') {
+                if (document.activeElement && !document.activeElement.readOnly &&
+                    (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
+                    try { document.execCommand('cut'); } catch (err) { }
+                }
+            }
+            else if (activeMod && e.key.toLowerCase() === 'v') {
+                if (document.activeElement && !document.activeElement.readOnly &&
+                    (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
+
+                    const pasteLogic = async () => {
+                        try {
+                            if (navigator.clipboard && navigator.clipboard.readText) {
+                                const text = await navigator.clipboard.readText();
+                                document.execCommand('insertText', false, text);
+                            } else {
+                                document.execCommand('paste');
+                            }
+                        } catch (err) {
+                            try { document.execCommand('paste'); } catch (fallback) { }
+                        }
+                    };
+                    pasteLogic();
+                }
+            }
+            else if (activeMod && e.key.toLowerCase() === 'a') {
+                if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
+                    document.activeElement.select();
+                    e.preventDefault();
+                }
+            }
+            else if ((activeMod && (e.key.toLowerCase() === 'q' || e.key.toLowerCase() === 'w')) ||
+                (e.altKey && e.key === 'F4')) {
+                e.preventDefault();
+                if (window.omni_quit) {
+                    window.omni_quit('');
+                } else {
+                    window.close();
+                }
+            }
+        });
+    </script>
 </body>
 
 </html>

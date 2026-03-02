@@ -11,6 +11,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 if(APPLE)
     find_library(WEBKIT_FRAMEWORK WebKit REQUIRED)
 elseif(WIN32)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mwindows")
 elseif(UNIX AND NOT APPLE)
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
@@ -32,7 +33,19 @@ add_custom_command(
     COMMENT "Bundling HTML and Assets into C++ Header..."
 )
 
-add_executable(OmniEncrypt main.cpp ${CMAKE_CURRENT_SOURCE_DIR}/html_content.h)
+if(APPLE)
+    add_executable(OmniEncrypt MACOSX_BUNDLE main.cpp ${CMAKE_CURRENT_SOURCE_DIR}/html_content.h)
+    set_target_properties(OmniEncrypt PROPERTIES
+        MACOSX_BUNDLE TRUE
+        MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Info.plist.in"
+        MACOSX_BUNDLE_BUNDLE_NAME "OmniEncrypt"
+        MACOSX_BUNDLE_BUNDLE_VERSION "1.0.0"
+        MACOSX_BUNDLE_SHORT_VERSION_STRING "1.0.0"
+        MACOSX_BUNDLE_GUI_IDENTIFIER "com.omnisphere.omniencrypt"
+    )
+else()
+    add_executable(OmniEncrypt main.cpp ${CMAKE_CURRENT_SOURCE_DIR}/html_content.h)
+endif()
 
 target_compile_definitions(OmniEncrypt PRIVATE SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 target_include_directories(OmniEncrypt PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -65,8 +78,21 @@ add_custom_target(SyncAssets ALL
 )
 
 if(APPLE)
+    # Copiar dylib dentro del bundle en Contents/Frameworks/
     add_custom_command(TARGET SyncAssets POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/OmniUtils/libOmniUtils.dylib" "$<TARGET_FILE_DIR:OmniEncrypt>"
+        COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_BUNDLE_DIR:OmniEncrypt>/Contents/Frameworks"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_CURRENT_SOURCE_DIR}/OmniUtils/libOmniUtils.dylib"
+            "$<TARGET_BUNDLE_DIR:OmniEncrypt>/Contents/Frameworks/libOmniUtils.dylib"
+        COMMENT "Bundling libOmniUtils.dylib into .app bundle"
+    )
+    # Ajustar rpath para que el ejecutable encuentre la dylib dentro del bundle
+    add_custom_command(TARGET SyncAssets POST_BUILD
+        COMMAND install_name_tool -change
+            libOmniUtils.dylib
+            "@executable_path/../Frameworks/libOmniUtils.dylib"
+            "$<TARGET_FILE:OmniEncrypt>"
+        COMMENT "Fixing dylib rpath inside .app bundle"
     )
 elseif(WIN32)
     add_custom_command(TARGET SyncAssets POST_BUILD
@@ -117,3 +143,10 @@ elseif(UNIX AND NOT APPLE)
 endif()
 
 add_dependencies(SyncAssets OmniEncrypt)
+
+# Linux: install targets para AppImage
+if(UNIX AND NOT APPLE)
+    install(TARGETS OmniEncrypt DESTINATION bin)
+    install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/omniencrypt.desktop" DESTINATION share/applications)
+    install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/OmniUtils/libOmniUtils.so" DESTINATION lib)
+endif()
