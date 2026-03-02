@@ -4,35 +4,24 @@ project(OmniEncrypt LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Configure include paths
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-# Headers are in OmniUtils/Include
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/OmniUtils/Include)
-# Webview headers
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/webview)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-# macOS Webview Requirements
-# Webview Requirements per Platform
 if(APPLE)
     find_library(WEBKIT_FRAMEWORK WebKit REQUIRED)
 elseif(WIN32)
-    # WebView2 is typically handled by the header if not using a specific NuGet package,
-    # but some setups require linking against WebView2Loader.
-    # For a simple webview.h setup, it often just works with the right defines.
 elseif(UNIX AND NOT APPLE)
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
     pkg_check_modules(WEBKIT2 REQUIRED webkit2gtk-4.0)
 endif()
 
-# Transitive dependencies (OmniUtils uses Sodium and Boost)
 find_library(SODIUM_LIB sodium)
 find_package(Boost COMPONENTS json)
 
-# Find Python for the asset bundling script (Cross-Platform)
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
-# Generate html_content.h from code.html and assets
 add_custom_command(
     OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/html_content.h
     COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/build_assets.py
@@ -45,53 +34,45 @@ add_custom_command(
 
 add_executable(OmniEncrypt main.cpp ${CMAKE_CURRENT_SOURCE_DIR}/html_content.h)
 
-# Pass the source directory so main.cpp can find code.html automatically without copying during dev
 target_compile_definitions(OmniEncrypt PRIVATE SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 target_include_directories(OmniEncrypt PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-# Link OmniUtils library
-# We link the .dylib directly since we don't have the source to rebuild it
-target_link_libraries(OmniEncrypt PRIVATE
-    "${CMAKE_CURRENT_SOURCE_DIR}/OmniUtils/libOmniUtils.dylib"
-)
+if(APPLE)
+    target_link_libraries(OmniEncrypt PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/OmniUtils/libOmniUtils.dylib")
+elseif(WIN32)
+    target_link_libraries(OmniEncrypt PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/OmniUtils/Libs/libOmniUtils.dll.a")
+elseif(UNIX AND NOT APPLE)
+    target_link_libraries(OmniEncrypt PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/OmniUtils/libOmniUtils.so")
+endif()
 
-# Link platform-specific requirements
 if(APPLE)
     target_link_libraries(OmniEncrypt PRIVATE "${WEBKIT_FRAMEWORK}")
 elseif(WIN32)
-    # On Windows, webview.h uses WebView2.
-    # We might need to link against Shlwapi and others.
-    target_link_libraries(OmniEncrypt PRIVATE Shlwapi)
+    target_link_libraries(OmniEncrypt PRIVATE Shlwapi version ole32 user32)
 elseif(UNIX AND NOT APPLE)
     target_link_libraries(OmniEncrypt PRIVATE ${GTK3_LIBRARIES} ${WEBKIT2_LIBRARIES})
     target_compile_options(OmniEncrypt PRIVATE ${GTK3_CFLAGS} ${WEBKIT2_CFLAGS})
 endif()
 
-# Link transitive dependencies if found
 if(SODIUM_LIB)
     target_link_libraries(OmniEncrypt PRIVATE ${SODIUM_LIB})
 endif()
 if(Boost_FOUND)
-    target_link_libraries(OmniEncrypt PRIVATE Boost::json)
 endif()
 
 add_custom_target(SyncAssets ALL
     COMMENT "Syncing runtime dependencies to build directory"
 )
 
-# Cross-platform OmniUtils sync
 if(APPLE)
     add_custom_command(TARGET SyncAssets POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/OmniUtils/libOmniUtils.dylib" "$<TARGET_FILE_DIR:OmniEncrypt>"
     )
 elseif(WIN32)
     add_custom_command(TARGET SyncAssets POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/OmniUtils/OmniUtils.dll" "$<TARGET_FILE_DIR:OmniEncrypt>"
-        # Add WebView2Loader.dll if present
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/webview/build/native/x64/WebView2Loader.dll" "$<TARGET_FILE_DIR:OmniEncrypt>" || true
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/OmniUtils/libOmniUtils.dll" "$<TARGET_FILE_DIR:OmniEncrypt>"
     )
 
-    # Transitive Windows Dependency Resolution
     get_filename_component(SODIUM_LIB_DIR "${SODIUM_LIB}" DIRECTORY)
     find_file(SODIUM_DLL 
         NAMES "libsodium.dll" "sodium.dll" "libsodium-26.dll"
