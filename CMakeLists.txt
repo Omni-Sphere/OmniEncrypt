@@ -71,6 +71,7 @@ if(SODIUM_LIB)
     target_link_libraries(OmniEncrypt PRIVATE ${SODIUM_LIB})
 endif()
 if(Boost_FOUND)
+    target_link_libraries(OmniEncrypt PRIVATE Boost::json)
 endif()
 
 add_custom_target(SyncAssets ALL
