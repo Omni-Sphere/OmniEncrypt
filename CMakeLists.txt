@@ -147,7 +147,3 @@ add_dependencies(SyncAssets OmniEncrypt)
 
 # Linux: install targets para AppImage
 if(UNIX AND NOT APPLE)
-    install(TARGETS OmniEncrypt DESTINATION bin)
-    install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/omniencrypt.desktop" DESTINATION share/applications)
-    install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/OmniUtils/libOmniUtils.so" DESTINATION lib)
-endif()
