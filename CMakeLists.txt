@@ -145,5 +145,3 @@ endif()
 
 add_dependencies(SyncAssets OmniEncrypt)
 
-# Linux: install targets para AppImage
-if(UNIX AND NOT APPLE)
