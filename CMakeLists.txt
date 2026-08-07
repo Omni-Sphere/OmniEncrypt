@@ -1,11 +1,37 @@
 cmake_minimum_required(VERSION 3.16)
+
+set(CMAKE_POLICY_DEFAULT_CMP0135 NEW)
+set(CMAKE_POLICY_DEFAULT_CMP0167 NEW)
+if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
+endif()
+if(POLICY CMP0167)
+    cmake_policy(SET CMP0167 NEW)
+endif()
+
 project(OmniEncrypt LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+include(FetchContent)
+FetchContent_Declare(
+    OmniUtils
+    GIT_REPOSITORY https://github.com/Omni-Sphere/OmniUtils.git
+    GIT_TAG        main
+)
+
+set(WEBVIEW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(WEBVIEW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(WEBVIEW_BUILD_STATIC_LIBRARY ON CACHE BOOL "" FORCE)
+FetchContent_Declare(webview
+    GIT_REPOSITORY https://github.com/webview/webview.git
+    GIT_TAG cbbdee44afff22867de9fd88a9fc8350d9bdd399
+)
+
+FetchContent_MakeAvailable(OmniUtils webview)
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/OmniUtils/Include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 if(APPLE)
@@ -15,7 +41,10 @@ elseif(WIN32)
 elseif(UNIX AND NOT APPLE)
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
-    pkg_check_modules(WEBKIT2 REQUIRED webkit2gtk-4.0)
+    pkg_check_modules(WEBKIT2 webkit2gtk-4.1 QUIET)
+    if(NOT WEBKIT2_FOUND)
+        pkg_check_modules(WEBKIT2 REQUIRED webkit2gtk-4.0)
+    endif()
 endif()
 
 find_library(SODIUM_LIB sodium)
@@ -50,13 +79,7 @@ endif()
 target_compile_definitions(OmniEncrypt PRIVATE SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 target_include_directories(OmniEncrypt PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-if(APPLE)
-    target_link_libraries(OmniEncrypt PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/OmniUtils/libOmniUtils.dylib")
-elseif(WIN32)
-    target_link_libraries(OmniEncrypt PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/OmniUtils/Libs/libOmniUtils.dll.a")
-elseif(UNIX AND NOT APPLE)
-    target_link_libraries(OmniEncrypt PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/OmniUtils/libOmniUtils.so")
-endif()
+target_link_libraries(OmniEncrypt PRIVATE OmniUtils webview::core)
 
 if(APPLE)
     target_link_libraries(OmniEncrypt PRIVATE "${WEBKIT_FRAMEWORK}")
@@ -83,7 +106,7 @@ if(APPLE)
     add_custom_command(TARGET SyncAssets POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_BUNDLE_DIR:OmniEncrypt>/Contents/Frameworks"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${CMAKE_CURRENT_SOURCE_DIR}/OmniUtils/libOmniUtils.dylib"
+            "$<TARGET_FILE:OmniUtils>"
             "$<TARGET_BUNDLE_DIR:OmniEncrypt>/Contents/Frameworks/libOmniUtils.dylib"
         COMMENT "Bundling libOmniUtils.dylib into .app bundle"
     )
@@ -97,7 +120,7 @@ if(APPLE)
     )
 elseif(WIN32)
     add_custom_command(TARGET SyncAssets POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/OmniUtils/libOmniUtils.dll" "$<TARGET_FILE_DIR:OmniEncrypt>"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:OmniUtils>" "$<TARGET_FILE_DIR:OmniEncrypt>"
     )
 
     get_filename_component(SODIUM_LIB_DIR "${SODIUM_LIB}" DIRECTORY)
@@ -139,9 +162,10 @@ elseif(WIN32)
     endif()
 elseif(UNIX AND NOT APPLE)
     add_custom_command(TARGET SyncAssets POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/OmniUtils/libOmniUtils.so" "$<TARGET_FILE_DIR:OmniEncrypt>"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:OmniUtils>" "$<TARGET_FILE_DIR:OmniEncrypt>"
     )
 endif()
 
 add_dependencies(SyncAssets OmniEncrypt)
+
 

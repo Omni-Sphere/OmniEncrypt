@@ -5,8 +5,8 @@
 #include <boost/json.hpp>
 #include <string>
 
-#ifdef _WIN32
-#include <windows.h>
+#ifndef _WIN32
+#include <gtk/gtk.h>
 #endif
 
 // Helpers
@@ -37,11 +37,20 @@ int WINAPI WinMain(HINSTANCE hInt, HINSTANCE hPrevInst, LPSTR lpCmdLine,
 #else
 int main() {
 #endif
-  omnisphere::utils::Base64::SetSecret(".:d0mn15ph3r3b:.");
   webview::webview w(false, nullptr);
   w.set_title("OmniEncrypt");
 
-  w.set_size(900, 530, WEBVIEW_HINT_FIXED);
+  w.set_size(850, 580, WEBVIEW_HINT_NONE);
+#ifndef _WIN32
+  if (auto win_ptr = w.window().value()) {
+    GtkWindow *win = GTK_WINDOW(win_ptr);
+    gtk_window_set_default_size(win, 850, 580);
+    gtk_widget_set_size_request(GTK_WIDGET(win), 850, 580);
+    gtk_window_set_resizable(win, FALSE);
+  }
+#else
+  w.set_size(850, 580, WEBVIEW_HINT_FIXED);
+#endif
 
   w.bind("omni_encrypt", [&](const std::string &req) -> std::string {
     try {
